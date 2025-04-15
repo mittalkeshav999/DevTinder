@@ -1,4 +1,6 @@
 const mongoose = require("mongoose");
+const jwt = require("jsonwebtoken")
+const bcrypt = require('bcrypt')
 
 const userSchema= new mongoose.Schema({
     firstName:{
@@ -11,7 +13,7 @@ const userSchema= new mongoose.Schema({
     },
     emailId:{
         type:String,
-        Unique:true,
+        unique:true,
         required:true,
         lowercase:true,
         trim:true
@@ -30,13 +32,23 @@ const userSchema= new mongoose.Schema({
     gender:{
         validate(value){
             if(!["male","female","others"].includes(value)){
-                throw new error("Enter valid gender")
+                throw new Error("Enter valid gender")
             }
         },
         type:String
     }
 
 },
-{timestamps:true})
+{timestamps:true});
+userSchema.methods.validatePassword =  async function (password) {
+    const user = this;
+    const isPasswordValid = await bcrypt.compare(password,user.password);
+    return isPasswordValid;
+}
+userSchema.methods.getJWT = async function(){
+    const user = this;
+    const token = await jwt.sign({_id:user._id},"Dev@Tinder$",{expiresIn:"7d"});
+    return token;
+}
 const User = mongoose.model("User",userSchema);
 module.exports=User;
